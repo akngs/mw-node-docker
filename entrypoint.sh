@@ -1,8 +1,4 @@
 #!/bin/sh
-
-set -e
-cd /src
-
-OPTS="-n 1"
-
-exec node server -c config.yaml $OPTS
+cd /usr/src/restbase
+envsubst '${MEDIAWIKI_PROTOCOL} ${MEDIAWIKI_SITE_SERVER}' < config_template.yaml > config.yaml
+exec node server.js -c config.yaml -n 1

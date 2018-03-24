@@ -1,20 +1,32 @@
-FROM node:8-alpine
+FROM debian:sid
 LABEL maintainer="jania902@gmail.com"
 
-# Install node dependencies
-RUN apk add --no-cache --virtual .build-deps git
-COPY package.json /src/
-COPY package-lock.json /src/
-WORKDIR /src
-RUN npm install
-RUN mkdir -p /data
-RUN apk del .build-deps
+# Install debian packages
+RUN set -x \
+  && apt update \
+  && apt install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl \
+    gettext-base \
+    git \
+    npm \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /var/cache/apt/archives/*
 
-# Copy other files
-COPY entrypoint.sh /src/
-COPY config.yaml /src/
-COPY server.js /src/
+# Install restbase
+RUN set -x \
+  && mkdir -p /usr/src \
+  && cd /usr/src \
+  && git clone https://github.com/wikimedia/restbase.git \
+  && cd restbase \
+  && npm install \
+  && npm install wikimedia/parsoid \
+  && cd .. \
+  && ( find . -type d -name ".git" && find . -name ".gitignore" && find . -name ".gitmodules" ) | xargs rm -rf
+
+COPY config.yaml /usr/src/restbase/config_template.yaml
 
 EXPOSE 7231
-
-CMD ["/src/entrypoint.sh"]
+COPY entrypoint.sh /entrypoint.sh
+CMD ["/entrypoint.sh"]
